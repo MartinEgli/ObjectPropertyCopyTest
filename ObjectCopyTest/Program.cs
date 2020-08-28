@@ -36,7 +36,7 @@ namespace ObjectCopyTest
                 foreach (var source in sources)
                 {
                     var target = new TestObject();
-                    source.CopyContent(target);
+                    source.Copy(target);
                     targets.Add(target);
                 }
 
@@ -51,7 +51,7 @@ namespace ObjectCopyTest
                 foreach (var source in sources)
                 {
                     var target = new TestObject();
-                    source.CopyContentByAttribute(target);
+                    CopyProvider.Instance.Copy(source, target);
                     targets.Add(target);
                 }
 
@@ -63,10 +63,15 @@ namespace ObjectCopyTest
             stopwatch.Start();
             {
                 var targets = new List<ITestObject>(number);
+
+                //CopyPropertyMapProvider.Instance.AddPropertyMap<>();
+                var action = CopyCacheProvider.Instance.GetCopyAction<ITestObject, TestObject>(new TestObject());
+                // var properties =  CopyCacheProvider.GetPropertyInfos(new TestObject()).ToList();
                 foreach (var source in sources)
                 {
                     var target = new TestObject();
-                    source.CopyContentByBufferdAttribute(target, target.GetPropertyWithAttribute<CopyableAttribute>());
+                    action(source, target);
+                    //  CopyCacheProvider.Instance.Copy(source, target, properties);
                     targets.Add(target);
                 }
 
@@ -74,55 +79,103 @@ namespace ObjectCopyTest
                 Console.WriteLine($"Attribute bufferd Property infos copy time {time}");
             }
 
+            //stopwatch.Reset();
+            //stopwatch.Start();
+            //{
+            //    var targets = new List<ITestObject>(number);
+
+            //    foreach (var source in sources)
+            //    {
+            //        var target = new TestObject();
+            //        CopyDomProvider.Instance.Copy(source, target);
+            //        targets.Add(target);
+            //    }
+
+            //    var time = stopwatch.Elapsed;
+            //    Console.WriteLine($"DOM with code generation Property infos copy time {time}");
+            //}
+
+            //stopwatch.Reset();
+            //stopwatch.Start();
+            //{
+            //    var targets = new List<ITestObject>(number);
+            //    foreach (var source in sources)
+            //    {
+            //        var target = new TestObject();
+            //        CopyDomProvider.Instance.Copy(source, target);
+            //        targets.Add(target);
+            //    }
+
+            //    var time = stopwatch.Elapsed;
+            //    Console.WriteLine($"DOM Property infos copy time {time}");
+            //}
+            //{
+            //    stopwatch.Reset();
+            //    stopwatch.Start();
+            //    var action = CopyDomProvider.Instance.CopyAction<ITestObject>();
+
+            //    var targets = new List<ITestObject>(number);
+            //    foreach (var source in sources)
+            //    {
+            //        var target = new TestObject();
+            //        action(source, target);
+            //        targets.Add(target);
+            //    }
+
+            //    var time = stopwatch.Elapsed;
+            //    Console.WriteLine($"DOM one action copy time {time}");
+            //}
+
+            //{
+            //    stopwatch.Reset();
+            //    stopwatch.Start();
+            //    var action = CopyDomProvider.Instance.CopyAction<ITestObject>();
+
+            //    var targets = new List<ITestObject>(number);
+            //    foreach (var source in sources)
+            //    {
+            //        var target = new TestObject();
+            //        action(source, target);
+            //        targets.Add(target);
+            //    }
+
+            //    var time = stopwatch.Elapsed;
+            //    Console.WriteLine($"DOM one action copy time {time}");
+            //}
+
             stopwatch.Reset();
             stopwatch.Start();
             {
                 var targets = new List<ITestObject>(number);
-                CopyHelper.GenerateCopyClass<ITestObject, TestObject>();
-                CopyHelper.GenerateCopyClass<ITestObject, ITestObject>();
-
+                var instance = CopyDomProvider.Instance;
                 foreach (var source in sources)
                 {
                     var target = new TestObject();
-                    CopyHelper.CopyWithDom(source, target);
+                    instance.CopyAction<ITestObject>()(source, target);
                     targets.Add(target);
                 }
 
                 var time = stopwatch.Elapsed;
-                Console.WriteLine($"DOM with code generation Property infos copy time {time}");
+                Console.WriteLine($"DOM action copy time {time}");
             }
 
             stopwatch.Reset();
             stopwatch.Start();
             {
                 var targets = new List<ITestObject>(number);
+                var instance = CopyDomProvider.Instance;
                 foreach (var source in sources)
                 {
                     var target = new TestObject();
-                    CopyHelper.CopyWithDom(source, target);
+                    instance.CopyAction<ITestObject>()(source, target);
                     targets.Add(target);
                 }
 
                 var time = stopwatch.Elapsed;
-                Console.WriteLine($"DOM Property infos copy time {time}");
+                Console.WriteLine($"DOM action copy time {time}");
             }
 
-            stopwatch.Reset();
-            stopwatch.Start();
-            {
-                var targets = new List<ITestObject>(number);
-                var action = CopyHelper.ActionCopyWithDom<ITestObject, TestObject>();
-                foreach (var source in sources)
-                {
-                    var target = new TestObject();
-                    action(source, target);
-                    targets.Add(target);
-                }
-
-                var time = stopwatch.Elapsed;
-                Console.WriteLine($"DOM Property infos copy time {time}");
-            }
-
+            Console.WriteLine("Start direct copy");
             stopwatch.Reset();
             stopwatch.Start();
             {
@@ -130,7 +183,7 @@ namespace ObjectCopyTest
                 foreach (var source in sources)
                 {
                     var target = new TestObject();
-                    source.CopyContent(target);
+                    source.Copy(target);
                     targets.Add(target);
                 }
 
