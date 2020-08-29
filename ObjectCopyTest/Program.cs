@@ -147,7 +147,7 @@ namespace ObjectCopyTest
             stopwatch.Start();
             {
                 var targets = new List<ITestObject>(number);
-                var instance = CopyDomProvider.Instance;
+                var instance = CopyDomCodeProvider.Instance;
                 foreach (var source in sources)
                 {
                     var target = new TestObject();
@@ -156,7 +156,7 @@ namespace ObjectCopyTest
                 }
 
                 var time = stopwatch.Elapsed;
-                Console.WriteLine($"DOM action copy time {time}");
+                Console.WriteLine($"DOM Code action copy time {time}");
             }
 
             stopwatch.Reset();
@@ -174,6 +174,74 @@ namespace ObjectCopyTest
                 var time = stopwatch.Elapsed;
                 Console.WriteLine($"DOM action copy time {time}");
             }
+
+           
+
+
+            stopwatch.Reset();
+            stopwatch.Start();
+            {
+                var targets = new List<ITestObject>(number);
+                var instance = CopyDomProvider.Instance;
+                foreach (var source in sources)
+                {
+                    var target = new TestObject();
+                    instance.CopyAction<ITestObject>()(source, target);
+                    targets.Add(target);
+                }
+
+                var time = stopwatch.Elapsed;
+                Console.WriteLine($"DOM action copy time {time}");
+            }
+
+            stopwatch.Reset();
+            stopwatch.Start();
+            {
+                var targets = new List<ITestObject>(number);
+                var instance = CopyDomCodeProvider.Instance;
+                foreach (var source in sources)
+                {
+                    var target = new TestObject();
+                    instance.CopyAction<ITestObject>()(source, target);
+                    targets.Add(target);
+                }
+
+                var time = stopwatch.Elapsed;
+                Console.WriteLine($"DOM code action copy time {time}");
+            }
+
+            stopwatch.Reset();
+            stopwatch.Start();
+            {
+                var targets = new List<ITestObject>(number);
+                var instance = CopyDomProvider.Instance;
+                foreach (var source in sources)
+                {
+                    var target = new TestObject();
+                    instance.CopyAction<ITestObject>()(source, target);
+                    targets.Add(target);
+                }
+
+                var time = stopwatch.Elapsed;
+                Console.WriteLine($"DOM action copy time {time}");
+            }
+
+            stopwatch.Reset();
+            stopwatch.Start();
+            {
+                var targets = new List<ITestObject>(number);
+                var instance = CopyDomCodeProvider.Instance;
+                foreach (var source in sources)
+                {
+                    var target = new TestObject();
+                    instance.CopyAction<ITestObject>()(source, target);
+                    targets.Add(target);
+                }
+
+                var time = stopwatch.Elapsed;
+                Console.WriteLine($"DOM code action copy time {time}");
+            }
+
 
             Console.WriteLine("Start direct copy");
             stopwatch.Reset();

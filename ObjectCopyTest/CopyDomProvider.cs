@@ -1,180 +1,254 @@
 ﻿using System;
+using System.CodeDom;
 using System.CodeDom.Compiler;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
-using System.Text;
 
 namespace ObjectCopyTest
 {
     public class CopyDomProvider : ICopyProvider
     {
-        private readonly Dictionary<string, Type> Comp = new Dictionary<string, Type>();
-        private readonly Dictionary<string, object> actions = new Dictionary<string, object>();
+        private const string ClassName = "Copy";
+        private const string CopyActionMethodName = "CopyAction";
+        private const string CopyMethodName = "Copy";
+        private const string NamespaceName = "CopyHelper";
+
+        private readonly Dictionary<string, object> _actions = new Dictionary<string, object>();
+        private readonly Dictionary<string, Type> _comp = new Dictionary<string, Type>();
+
+        /// <summary>
+        /// Gets the instance.
+        /// </summary>
+        /// <value>
+        /// The instance.
+        /// </value>
         public static CopyDomProvider Instance { get; } = new CopyDomProvider();
 
-        public Action<T, TU> CopyAction<T, TU>()
-
-        {
-            var key = typeof(T).FullName + typeof(TU).FullName;
-            if (actions.TryGetValue(key, out var action))
-            {
-                return action as Action<T, TU>;
-            }
-            var className = CopyProviderHelper.GetClassName(typeof(T), typeof(TU));
-
-            var flags = BindingFlags.Public | BindingFlags.Static |
-                        BindingFlags.InvokeMethod;
-
-            if (!Comp.TryGetValue(className, out var comp))
-            {
-                comp = GenerateCopyClass(typeof(T), typeof(TU));
-            }
-            // comp = GenerateCopyClass(typeof(T), typeof(TU));
-            var result = comp.InvokeMember("CopyPropsAction", flags, null,
-                null, null) as Action<T, TU>;
-
-            actions.Add(key, result);
-            return result;
-        }
-
-        
-        public Action<T, T> CopyAction<T>()
-
-        {
-            var key = typeof(T).FullName;
-            if (actions.TryGetValue(key, out var action))
-            {
-                return action as Action<T, T>;
-            }
-            var className = CopyProviderHelper.GetClassName(typeof(T), typeof(T));
-
-            var flags = BindingFlags.Public | BindingFlags.Static |
-                        BindingFlags.InvokeMethod;
-
-            if (!Comp.TryGetValue(className, out var comp))
-            {
-                comp = GenerateCopyClass(typeof(T), typeof(T));
-            }
-            // comp = GenerateCopyClass(typeof(T), typeof(TU));
-            var result = comp.InvokeMember("CopyPropsAction", flags, null,
-                null, null) as Action<T, T>;
-
-            actions.Add(key, result);
-            return result;
-        }
-
+        /// <summary>
+        /// Copies the specified source.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <typeparam name="TU">The type of the u.</typeparam>
+        /// <param name="source">The source.</param>
+        /// <param name="target">The target.</param>
         public void Copy<T, TU>(T source, TU target)
         {
             CopyAction<T, TU>()(source, target);
         }
 
-        public void CopyWithDom<T, TU>(T source, TU target)
+        /// <summary>
+        /// Copies the action.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <typeparam name="TU">The type of the u.</typeparam>
+        /// <returns></returns>
+        public Action<T, TU> CopyAction<T, TU>()
 
+        {
+            var key = typeof(T).FullName + typeof(TU).FullName;
+            if (_actions.TryGetValue(key, out var action)) return action as Action<T, TU>;
+            return CreateCopyAction<T, TU>(key);
+
+        }
+
+        /// <summary>
+        /// Copies the action.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        public Action<T, T> CopyAction<T>()
+
+        {
+            var key = typeof(T).FullName;
+            if (_actions.TryGetValue(key, out var action)) return action as Action<T, T>;
+            return CreateCopyAction<T,T>(key);
+        }
+
+        /// <summary>
+        /// Creates the copy action.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <typeparam name="TU">The type of the u.</typeparam>
+        /// <param name="key">The key.</param>
+        /// <returns></returns>
+        private Action<T, TU> CreateCopyAction<T, TU>(string key)
         {
             var className = CopyProviderHelper.GetClassName(typeof(T), typeof(TU));
 
-            var flags = BindingFlags.Public | BindingFlags.Static |
-                        BindingFlags.InvokeMethod;
+            const BindingFlags flags = BindingFlags.Public | BindingFlags.Static |
+                                       BindingFlags.InvokeMethod;
 
-            var args = new object[] { source, target };
-            if (!Comp.TryGetValue(className, out var comp))
-                comp = GenerateCopyClass(source.GetType(), target.GetType());
-            // comp = GenerateCopyClass(typeof(T), typeof(TU));
+            if (!_comp.TryGetValue(className, out var comp)) comp = GenerateCopyClass(typeof(T), typeof(TU));
 
-            comp.InvokeMember("CopyProps", flags, null, null, args);
+            var result = comp.InvokeMember(CopyActionMethodName, flags, null,
+                null, null) as Action<T, TU>;
+
+            _actions.Add(key, result);
+            return result;
         }
 
+        /// <summary>
+        /// Generates the copy class.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <typeparam name="TU">The type of the u.</typeparam>
+        /// <returns></returns>
         public Type GenerateCopyClass<T, TU>()
-
         {
             var sourceType = typeof(T);
-
             var targetType = typeof(TU);
             return GenerateCopyClass(sourceType, targetType);
         }
 
+        /// <summary>
+        /// Generates the copy class.
+        /// </summary>
+        /// <param name="sourceType">Type of the source.</param>
+        /// <param name="targetType">Type of the target.</param>
+        /// <returns></returns>
         public Type GenerateCopyClass(Type sourceType, Type targetType)
-
         {
             var className = CopyProviderHelper.GetClassName(sourceType, targetType);
 
-            if (Comp.TryGetValue(className, out var type)) return type;
+            if (_comp.TryGetValue(className, out var type)) return type;
 
-            var builder = new StringBuilder();
+            var unit = new CodeCompileUnit();
+            
+            var ns = CreateNamespace();
+            unit.Namespaces.Add(ns);
 
-            builder.Append("namespace Copy {\r\n");
+            var targetClass = CreateClass(className);
+            ns.Types.Add(targetClass);
+            
+            var copyMethod = CreateCopyMethod(sourceType, targetType);
+            targetClass.Members.Add(copyMethod);
+            
+            var copyActionMethod = CreateCopyActionMethod(sourceType, targetType, copyMethod);
+            targetClass.Members.Add(copyActionMethod);
 
-            builder.Append("    using System;\r\n");
+            Debug.WriteLine(unit.ToString());
 
-            builder.Append("    public class ");
+            var results = BuildAssembly(unit, targetType.Assembly);
 
-            builder.Append(className);
+            // Compiler output
 
-            builder.Append("   {\r\n");
+            foreach (var line in results.Output) Debug.WriteLine(line);
 
-            builder.Append("        public static Action<" + sourceType.FullName + ", " + targetType.FullName +
-                           "> CopyPropsAction()");
+            var copierType = results.CompiledAssembly.GetType(NamespaceName + "." + className);
 
-            builder.Append("        {\r\n");
+            _comp.Add(className, copierType);
 
-            builder.Append("            return CopyProps;");
+            return copierType;
+        }
 
-            builder.Append("        }\r\n");
+        /// <summary>
+        /// Builds the assembly.
+        /// </summary>
+        /// <param name="unit">The unit.</param>
+        /// <param name="referencedAssembly">The referenced assembly.</param>
+        /// <returns></returns>
+        private static CompilerResults BuildAssembly(CodeCompileUnit unit, Assembly referencedAssembly)
+        {
+            var codeCompiler = CodeDomProvider.CreateProvider("CSharp");
 
-            builder.Append("        public static void CopyProps(");
+            var compilerParameters = new CompilerParameters();
 
-            builder.Append(sourceType.FullName);
+            compilerParameters.ReferencedAssemblies.Add(referencedAssembly.Location);
 
-            builder.Append(" source, ");
+            compilerParameters.GenerateInMemory = true;
 
-            builder.Append(targetType.FullName);
+            var results = codeCompiler.CompileAssemblyFromDom(compilerParameters, unit);
+            return results;
+        }
 
-            builder.Append(" target) {\r\n");
+        /// <summary>
+        /// Creates the class.
+        /// </summary>
+        /// <param name="className">Name of the class.</param>
+        /// <returns></returns>
+        private static CodeTypeDeclaration CreateClass(string className)
+        {
+            var targetClass = new CodeTypeDeclaration(className)
+            {
+                IsClass = true,
+                TypeAttributes = TypeAttributes.Public | TypeAttributes.Sealed
+            };
+            return targetClass;
+        }
+
+        /// <summary>
+        /// Creates the namespace.
+        /// </summary>
+        /// <returns></returns>
+        private static CodeNamespace CreateNamespace()
+        {
+            var copyHelper = new CodeNamespace(NamespaceName);
+            copyHelper.Imports.Add(new CodeNamespaceImport("System"));
+            return copyHelper;
+        }
+
+        /// <summary>
+        /// Creates the copy action method.
+        /// </summary>
+        /// <param name="sourceType">Type of the source.</param>
+        /// <param name="targetType">Type of the target.</param>
+        /// <param name="copyMethod">The copy method.</param>
+        /// <returns></returns>
+        private static CodeMemberMethod CreateCopyActionMethod(Type sourceType, Type targetType, CodeTypeMember copyMethod)
+        {
+            var copyActionMethod = new CodeMemberMethod
+            {
+                Attributes = MemberAttributes.Public | MemberAttributes.Static,
+                Name = CopyActionMethodName
+            };
+
+            var action = new CodeTypeReference(typeof(Action<,>));
+            action.TypeArguments.Add(sourceType);
+            action.TypeArguments.Add(targetType);
+
+            copyActionMethod.ReturnType = action;
+            var returnStatement =
+                new CodeMethodReturnStatement(new CodeVariableReferenceExpression(copyMethod.Name));
+
+            copyActionMethod.Statements.Add(returnStatement);
+            return copyActionMethod;
+        }
+
+        /// <summary>
+        /// Creates the copy method.
+        /// </summary>
+        /// <param name="sourceType">Type of the source.</param>
+        /// <param name="targetType">Type of the target.</param>
+        /// <returns></returns>
+        private static CodeMemberMethod CreateCopyMethod(Type sourceType, Type targetType)
+        {
+            var copyMethod = new CodeMemberMethod
+            {
+                Attributes = MemberAttributes.Public | MemberAttributes.Static,
+                Name = CopyMethodName
+            };
+
+            var source = new CodeParameterDeclarationExpression(sourceType, "source");
+            var target = new CodeParameterDeclarationExpression(targetType, "target");
+            copyMethod.Parameters.Add(source);
+            copyMethod.Parameters.Add(target);
 
             var map = CopyProviderHelper.GetMatchingProperties(sourceType, targetType);
 
             foreach (var item in map)
 
             {
-                builder.Append("            target.");
-
-                builder.Append(item.TargetProperty.Name);
-
-                builder.Append(" = ");
-
-                builder.Append("source.");
-
-                builder.Append(item.SourceProperty.Name);
-
-                builder.Append(";\r\n");
+                var targetReference =
+                    new CodeFieldReferenceExpression(new CodeVariableReferenceExpression(target.Name),
+                        item.TargetProperty.Name);
+                var sourceReference =
+                    new CodeFieldReferenceExpression(new CodeVariableReferenceExpression(source.Name),
+                        item.SourceProperty.Name);
+                copyMethod.Statements.Add(new CodeAssignStatement(targetReference, sourceReference));
             }
 
-            builder.Append("        }\r\n   }\r\n}");
-
-            // Write out method body
-
-            Debug.WriteLine(builder.ToString());
-
-            var codeCompiler = CodeDomProvider.CreateProvider("CSharp");
-
-            var compilerParameters = new CompilerParameters();
-
-            compilerParameters.ReferencedAssemblies.Add(typeof(TestObject).Assembly.Location);
-
-            compilerParameters.GenerateInMemory = true;
-
-            var results = codeCompiler.CompileAssemblyFromSource(compilerParameters, builder.ToString());
-
-            // Compiler output
-
-            foreach (var line in results.Output) Debug.WriteLine(line);
-
-            var copierType = results.CompiledAssembly.GetType("Copy." + className);
-
-            Comp.Add(className, copierType);
-
-            return copierType;
+            return copyMethod;
         }
     }
 }
