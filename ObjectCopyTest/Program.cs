@@ -8,9 +8,11 @@ namespace ObjectCopyTest
     {
         private static void Main(string[] args)
         {
+
+            //CompareDomProvider2.Instance.GenerateComparableClass<TestObject, TestObject>();
             Console.WriteLine("Start Object Copy Test");
             Console.WriteLine("Create Source");
-            var number = 100000;
+            var number = 1;
             var stopwatch = new Stopwatch();
             var sources = new List<ITestObject>(number);
             for (var i = 0; i < number; i++)
@@ -162,12 +164,12 @@ namespace ObjectCopyTest
             stopwatch.Reset();
             stopwatch.Start();
             {
-                var targets = new List<ITestObject>(number);
+                var targets = new List<TestObject>(number);
                 var instance = CopyDomProvider.Instance;
                 foreach (var source in sources)
                 {
                     var target = new TestObject();
-                    instance.CopyAction<ITestObject>()(source, target);
+                    instance.CopyAction<TestObject>()(source, target);
                     targets.Add(target);
                 }
 

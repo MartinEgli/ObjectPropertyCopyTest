@@ -4,7 +4,7 @@ namespace ObjectCopyTest
 {
     public interface ICopyProvider
     {
-        void Copy<T, TU>(T source, TU target);
+        void Copy<TSource, TTarget>(TSource source, TTarget target);
         Action<TSource, TTarget> CopyAction<TSource, TTarget>();
         Action<T, T> CopyAction<T>();
     }

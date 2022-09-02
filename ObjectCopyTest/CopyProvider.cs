@@ -11,12 +11,13 @@ namespace ObjectCopyTest
 
         public static void Copy(object source, object target)
         {
-            foreach (var propertyInfo in GetPropertyWithAttribute<CopyableAttribute>(target))
+            foreach (var propertyInfo in PropertyInfoExtensions.GetPropertyWithAttribute<CopyableAttribute>(target.GetType()))
             {
                 var value = propertyInfo.GetValue(source);
                 propertyInfo.SetValue(target, value);
             }
         }
+        
 
         public Action<TSource, TTarget> CopyAction<TSource, TTarget>()
         {
@@ -28,15 +29,7 @@ namespace ObjectCopyTest
             return (source, target) => Copy(source, target);
         }
 
-        private static IEnumerable<PropertyInfo> GetPropertyWithAttribute<TAttribute>(object equatableEntity)
-            where TAttribute : Attribute
-        {
-            return equatableEntity
-                .GetType()
-                .GetInterfaces()
-                .SelectMany(t => t.GetProperties(BindingFlags.Instance | BindingFlags.Public))
-                .Where(pi => pi.GetCustomAttributes(typeof(TAttribute), true).Any());
-        }
+      
 
         void ICopyProvider.Copy<T, TU>(T source, TU target)
         {

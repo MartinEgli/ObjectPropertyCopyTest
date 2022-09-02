@@ -22,8 +22,8 @@ namespace ObjectCopyTest
             if (_actions.TryGetValue(key, out var action)) return action as Action<T, TU>;
             var className = CopyProviderHelper.GetClassName(typeof(T), typeof(TU));
 
-            var flags = BindingFlags.Public | BindingFlags.Static |
-                        BindingFlags.InvokeMethod;
+            const BindingFlags flags = BindingFlags.Public | BindingFlags.Static |
+                                       BindingFlags.InvokeMethod;
 
             if (!_comp.TryGetValue(className, out var comp)) comp = GenerateCopyClass(typeof(T), typeof(TU));
 
@@ -41,8 +41,8 @@ namespace ObjectCopyTest
             if (_actions.TryGetValue(key, out var action)) return action as Action<T, T>;
             var className = CopyProviderHelper.GetClassName(typeof(T), typeof(T));
 
-            var flags = BindingFlags.Public | BindingFlags.Static |
-                        BindingFlags.InvokeMethod;
+            const BindingFlags flags = BindingFlags.Public | BindingFlags.Static |
+                                       BindingFlags.InvokeMethod;
 
             if (!_comp.TryGetValue(className, out var comp)) comp = GenerateCopyClass(typeof(T), typeof(T));
             // comp = GenerateCopyClass(typeof(T), typeof(TU));
@@ -63,14 +63,12 @@ namespace ObjectCopyTest
         {
             var className = CopyProviderHelper.GetClassName(typeof(T), typeof(TU));
 
-            var flags = BindingFlags.Public | BindingFlags.Static |
-                        BindingFlags.InvokeMethod;
+            const BindingFlags flags = BindingFlags.Public | BindingFlags.Static |
+                                       BindingFlags.InvokeMethod;
 
             var args = new object[] {source, target};
             if (!_comp.TryGetValue(className, out var comp))
                 comp = GenerateCopyClass(source.GetType(), target.GetType());
-            // comp = GenerateCopyClass(typeof(T), typeof(TU));
-
             comp.InvokeMember("CopyProps", flags, null, null, args);
         }
 
@@ -78,7 +76,6 @@ namespace ObjectCopyTest
 
         {
             var sourceType = typeof(T);
-
             var targetType = typeof(TU);
             return GenerateCopyClass(sourceType, targetType);
         }

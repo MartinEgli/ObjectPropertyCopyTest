@@ -1,26 +1,23 @@
-﻿using System;
-
-namespace Copy2
+﻿namespace ObjectCopyTest
 {
-    public class Copy_ObjectCopyTest_ITestObject_ObjectCopyTest_TestObject
+    public sealed class Copy_ObjectCopyTest_ITestObject_ObjectCopyTest_ITestObject
     {
-        public static Action<ObjectCopyTest.ITestObject, ObjectCopyTest.TestObject> CopyPropsAction()
+        public static void Copy(object source, object target)
         {
-            return CopyProps;
+            var t = (ITestObject)target;
+            var s = (ITestObject)source;
+            t.Text1 = s.Text1;
+            t.Text2 = s.Text2;
+            t.Text3 = s.Text3;
+            t.Text4 = s.Text4;
+            t.Text5 = s.Text5;
+            t.Number1 = s.Number1;
+            t.Number2 = s.Number2;
+            t.Number3 = s.Number3;
+            t.Number4 = s.Number4;
+            t.Number5 = s.Number5;
         }
-        public static void CopyProps(ObjectCopyTest.ITestObject source, ObjectCopyTest.TestObject target)
-        {
-            target.Text1 = source.Text1;
-            target.Text2 = source.Text2;
-            target.Text3 = source.Text3;
-            target.Text4 = source.Text4;
-            target.Text5 = source.Text5;
-            target.Number1 = source.Number1;
-            target.Number2 = source.Number2;
-            target.Number3 = source.Number3;
-            target.Number4 = source.Number4;
-            target.Number5 = source.Number5;
-        }
+
+        public static System.Action<object, object> CopyAction => Copy;
     }
 }
-
